@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 Relational Engine
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: taskforge-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-taskforge}
+      POSTGRES_USER: ${DB_USER:-taskforge}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-taskforge_secret_2026}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - taskforge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-taskforge} -d ${DB_NAME:-taskforge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskforge-net
+
+  # ----------------------------------------------------------------------------
+  # Spring Boot 3.3.5 Backend API Engine
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taskforge-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-taskforge}
+      DB_USER: ${DB_USER:-taskforge}
+      DB_PASSWORD: ${DB_PASSWORD:-taskforge_secret_2026}
+      JWT_SECRET: ${JWT_SECRET:-9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskforge-net
+
+  # ----------------------------------------------------------------------------
+  # Vite + React Industrial Workflow Studio Frontend
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: taskforge-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - taskforge-net
+
+volumes:
+  taskforge_pgdata:
+    name: taskforge_pgdata
+
+networks:
+  taskforge-net:
+    name: taskforge-net
+    driver: bridge
