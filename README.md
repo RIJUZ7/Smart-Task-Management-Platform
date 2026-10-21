@@ -25,57 +25,56 @@
 ## 2. System Architecture
 
 ```mermaid
-```mermaid
-flowchart TD
-    User["User Browser"] -->|HTTPS / WSS| Nginx["Nginx Reverse Proxy / Port 80"]
-
-    subgraph Frontend["React 19 + TypeScript SPA (Vite)"]
-        Router["React Router 7"]
-        AuthCtx["AuthContext"]
-        WsCtx["WorkspaceContext"]
-        NotifCtx["NotificationContext"]
-        Views["Overview / Tasks / Calendar / Analytics / Team"]
-        Charts["Recharts Engine"]
+graph TD
+    User([User Browser]) -->|HTTPS / WSS| Nginx[Nginx Reverse Proxy / Port 80]
+    
+    subgraph Frontend [React 19 + TypeScript SPA (Vite)]
+        Router[React Router 7]
+        AuthCtx[AuthContext]
+        WsCtx[WorkspaceContext]
+        NotifCtx[NotificationContext]
+        Views[Overview / Tasks / Calendar / Analytics / Team]
+        Charts[Recharts Engine]
     end
 
     User -->|Vite Dev / Port 5173| Frontend
-    Frontend -->|REST APIs + Bearer JWT| SpringBoot["Spring Boot 3.3.5 Backend / Port 8080"]
+    Frontend -->|REST APIs + Bearer JWT| SpringBoot[Spring Boot 3.3.5 Backend / Port 8080]
 
-    subgraph Backend["Spring Boot 3.3.5 REST API Engine"]
-        SecFilter["JwtAuthenticationFilter + SecurityFilterChain"]
-
-        subgraph Controllers["REST Controllers"]
-            AuthCtrl["AuthController"]
-            WsCtrl["WorkspaceController"]
-            TaskCtrl["TaskController"]
-            CommentCtrl["CommentController"]
-            ActCtrl["ActivityController"]
-            NotifCtrl["NotificationController"]
-            AnalyticsCtrl["AnalyticsController"]
+    subgraph Backend [Spring Boot 3.3.5 REST API Engine]
+        SecFilter[JwtAuthenticationFilter + SecurityFilterChain]
+        
+        subgraph Controllers
+            AuthCtrl[AuthController]
+            WsCtrl[WorkspaceController]
+            TaskCtrl[TaskController]
+            CommentCtrl[CommentController]
+            ActCtrl[ActivityController]
+            NotifCtrl[NotificationController]
+            AnalyticsCtrl[AnalyticsController]
         end
 
-        subgraph ServiceLayer["Business Logic and RBAC"]
-            TaskSvc["TaskService (Isolation + Activity Audit)"]
-            WsSvc["WorkspaceService (RBAC Verification)"]
-            AnalyticsSvc["AnalyticsService (Velocity + Capacity)"]
+        subgraph ServiceLayer [Business & RBAC Logic]
+            TaskSvc[TaskService (Isolation + Activity Audit)]
+            WsSvc[WorkspaceService (RBAC Verification)]
+            AnalyticsSvc[AnalyticsService (Velocity + Capacity)]
         end
 
-        subgraph Persistence["Spring Data JPA + Hibernate 6"]
-            Repos["JPA Specifications and Repositories"]
-            Flyway["Flyway Database Migrator (V1 and V2)"]
+        subgraph Persistence [Spring Data JPA + Hibernate 6]
+            Repos[JPA Specifications & Repositories]
+            Flyway[Flyway Database Migrator (V1 & V2)]
         end
-
-        SecFilter --> Controllers
-        Controllers --> ServiceLayer
-        ServiceLayer --> Persistence
-        Persistence --> DB[("PostgreSQL 16 / H2 Compatibility Mode")]
     end
 
-    subgraph Observability["Production Observability"]
-        Actuator["Actuator Health and Metrics"]
-        Swagger["Swagger UI and OpenAPI 3"]
+    SecFilter --> Controllers
+    Controllers --> ServiceLayer
+    ServiceLayer --> Persistence
+    Persistence --> DB[(PostgreSQL 16 / H2 Compatibility Mode)]
+    
+    subgraph Observability [Production Observability]
+        Actuator[/actuator/health & metrics]
+        Swagger[/swagger-ui.html & OpenAPI 3]
     end
-
+    
     SpringBoot --> Observability
 ```
 
